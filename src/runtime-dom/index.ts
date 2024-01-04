@@ -6,7 +6,7 @@ function createElement(type) {
     return document.createElement(type)
 }
 
-function patchProp(el, key, val) {
+function patchProp(el, key, preVal, nextVal) {
     console.log("patchProp------------")
 
     const isOn = (key: string) => {
@@ -14,9 +14,13 @@ function patchProp(el, key, val) {
     }
     if (isOn(key)) {
         const event = key.slice(2).toLowerCase();
-        el.addEventListener(event, val);
+        el.addEventListener(event, nextVal);
     } else {
-        el.setAttribute(key, val);
+        if(nextVal === undefined || nextVal === null) {
+            el.removeAttribute(key);
+        }else {
+            el.setAttribute(key, nextVal);
+        }
     }
 }
 
@@ -26,11 +30,24 @@ function insert(el, parent) {
     parent.append(el);
 }
 
+function remove(child) {
+    const parent = child.parentNode;
+    if(parent) {
+        parent.removeChild(child);
+    }
+}
+
+function setElementText(el, text) {
+    el.textContent = text;
+}
+
 
 const renderer: any = createRenderer({
     createElement,
     patchProp,
     insert,
+    remove,
+    setElementText
 })
 
 export function createApp(...args) {
