@@ -4,6 +4,7 @@ import { setupComponent, createComponentInstance } from "./component"
 import { Fragment, Text } from "./vnode";
 import { createAppAPI } from "./createApp"
 import { effect } from "../reactivity/effect";
+import { shouldUpdateComponent } from "./componentUpdateUtils";
 
 
 export function createRenderer(options) {
@@ -203,7 +204,7 @@ export function createRenderer(options) {
                 const nextChild = c2[nextIndex];
                 const anchor = nextIndex + 1 < l2 ? c2[nextIndex + 1].el : null;
                 if (newIndexToOldIndexMap[i] === 0) {
-                    patch(null, nextChild, container, parentComponent, anchor);  
+                    patch(null, nextChild, container, parentComponent, anchor);
                 }
                 else if (moved) {
                     if (j < 0 || i !== increasingNewIndexSequence[j]) {
@@ -280,12 +281,27 @@ export function createRenderer(options) {
     }
 
     function processComponent(n1, n2: any, container, parentComponent, anchor) {
-
-        mountComponent(n2, container, parentComponent, anchor);
+        if (!n1) {
+            mountComponent(n2, container, parentComponent, anchor);
+        } else {
+            updateComponent(n1, n2);
+        }
     }
 
+    function updateComponent(n1, n2) {
+        const instance = (n2.component = n1.component)
+        if(shouldUpdateComponent(n1, n2)) {
+            instance.next = n2;
+            instance.update();
+        }else {
+            n2.el = n1.el;
+            instance.vnode = n2;
+        }
+
+    } 
+
     function mountComponent(vnode: any, container: any, parentComponent, anchor) {
-        const instance = createComponentInstance(vnode, parentComponent);
+        const instance = (vnode.component = createComponentInstance(vnode, parentComponent));
 
         setupComponent(instance)
         setupRenderEffect(instance, vnode, container, anchor);
@@ -293,15 +309,21 @@ export function createRenderer(options) {
 
     function setupRenderEffect(instance: any, vnode, container: any, anchor) {
         // const subTree = instance.render();
-        effect(() => {
+        instance.update =  effect(() => {
             if (!instance.isMounted) {
                 const { proxy } = instance;
                 const subTree = (instance.subTree = instance.render.call(proxy));
+                console.log(subTree);
                 patch(null, subTree, container, instance, anchor)
 
                 vnode.el = subTree.el
                 instance.isMounted = true;
             } else {
+                const {next, vnode} = instance;
+                if(next) {
+                    next.el = vnode.el;
+                    updateComponentPreRender(instance, next);
+                }
                 const { proxy } = instance;
                 const subTree = instance.render.call(proxy)
                 const prevSubTree = instance.subTree
@@ -310,6 +332,12 @@ export function createRenderer(options) {
                 patch(prevSubTree, subTree, container, instance, anchor)
             }
         })
+    }
+
+    function updateComponentPreRender(instance, nextVNode) {
+        instance.vnode = nextVNode;
+        instance.next = null
+        instance.props = nextVNode.props
     }
 
     function getSequence(arr) {

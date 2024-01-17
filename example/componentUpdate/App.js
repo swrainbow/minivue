@@ -27,7 +27,7 @@ export const App ={
             // h(TextToText),
             // h(TextToArray),
             h("button", {onClick: this.changeChildProps}, "change child props"),
-            h(Chilld, {msg: this.msg}),
+            h(Child, {msg: this.msg}),
             h("button", {onClick: this.changeCount}, "change sefl count"),
             h("p", {}, "count: " + this.count),
         ])
