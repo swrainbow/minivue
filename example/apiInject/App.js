@@ -6,6 +6,7 @@ const Provider = {
         provide("foo", "fooVal");
         provide("bar", "barVal");
     },
+    template: `<div>Consumer: xxx </div>`
     render() {
         return h("div", {}, [h("p", {}, "Provider"), h(ProviderTwo)])
     }
