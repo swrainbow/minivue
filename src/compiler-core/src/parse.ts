@@ -12,11 +12,9 @@ export function baseParse(content: string) {
 }
 
 function parseChildren(context, ancestors) {
-    console.log("parseChildren", context, ancestors)
     const nodes: unknown[] = [];
     while (!isEnd(context, ancestors)) {
         const s = context.source
-        console.log("start parse context", context, s[1])
 
         let node;
         if (s.startsWith("{{")) {
@@ -37,7 +35,6 @@ function parseChildren(context, ancestors) {
 
 function isEnd(context, ancestors) {
     const s = context.source;
-    console.log("isEnd", s)
     if (s.startsWith("</")) {
         for (let i = 0; i < ancestors.length; i++) {
             const tag = ancestors[i].tag;
@@ -96,11 +93,9 @@ function startsWithEndTagOpen (source, tag) {
 
 function parseTag(context, type: TagType) {
     const match: any = /^<\/?([a-z]*)/i.exec(context.source);
-    console.log("=====match", match, context, type)
     const tag = match[1];
     advanceBy(context, match[0].length)
     advanceBy(context, 1)
-    console.log("after parse", context)
     if (type === TagType.End) return;
     return {
         type: NodeTypes.ELEMENT,
@@ -116,12 +111,10 @@ function parseInterpolation(context) {
     advanceBy(context, openDelimiter.length);
 
     const rawContentLength = closeIndex - openDelimiter.length;
-    console.log("befor parse text", context)
     const rawContent = parseTextData(context, rawContentLength);
     const content = rawContent.trim();
     advanceBy(context, closeDelimiter.length);
 
-    console.log("context.source", context.source);
     return {
         type: NodeTypes.INTERPOLATION,
         content: {

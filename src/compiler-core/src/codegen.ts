@@ -1,5 +1,6 @@
+import { isString } from "../../shared";
 import { NodeTypes } from "./ast";
-import { TO_DISPLAY_STRING, helperMapName } from "./runtimeHelpers";
+import { CREATE_ELEMENT_VNODE, TO_DISPLAY_STRING, helperMapName } from "./runtimeHelpers";
 
 export function generate(ast) {
     const context = createCodegenContext();
@@ -11,10 +12,10 @@ export function generate(ast) {
     const functionName = "render";
     const args = ["_ctx", "_cache"];
     const signature = args.join(", ")
-    console.log("ast", ast)
 
     push(`functionNmae ${functionName}(${signature}){`);
     push(`return `);
+    console.log("genNode", ast)
     genNode(ast.codegenNode, context);
     push("}");
     return {
@@ -35,6 +36,7 @@ function genFunctionPreamble(ast, context) {
 }
 
 function genNode(node: any, context: any) {
+    console.log("genNode", node, node.type === NodeTypes.ELEMENT)
     switch(node.type) {
         case NodeTypes.TEXT:
             genText(node, context);
@@ -44,13 +46,62 @@ function genNode(node: any, context: any) {
             break;
         case NodeTypes.SIMPLE_EXPRESSION:
             genExpression(node, context);
+            break;
+        case NodeTypes.ELEMENT:
+            genElement(node, context);
+            break;
+        case NodeTypes.COMPOUND_EXPRESSION:
+            genCompundExpression(node, context);
+            break
         default:
             break;
     }
     // const { push } = context;
     // push(`'${node.content}'`)
 }
+function genCompundExpression(node: any, context: any) {
+    const { push } = context;
+    const children = node.children;
+    for( let i = 0; i < children.length; i++) {
+        const child = children[i];
+        if(isString(child)) {
+            push(child);
+        }else {
+            genNode(child, context);
+        }
+    }
+}
 
+function genElement(node, context) {
+    const { push, helper} = context;
+    const { tag, children , props} = node;
+    console.log("genElement------", children, node, context.code);
+    push(`${helper(CREATE_ELEMENT_VNODE)}( `)
+    genNodeList(genNullable([tag, props, children]), context)
+    // genNode(children, context);
+    console.log("last===================", context.code)
+
+    push(")")
+}
+
+function genNodeList(nodes, context) {
+    const { push } = context;
+    for( let i = 0; i < nodes.length; i++) {
+        const node = nodes[i];
+        if(isString(node)) {
+            push(node);
+        }else {
+            genNode(node, context);
+        }
+        if( i < nodes.length - 1) {
+            push(", ")
+        }
+    }
+}
+
+function genNullable(args: any) {
+    return args.map((arg) => arg || 'null')
+}
 function genExpression(node, context) {
     const { push } = context;
     push(`${node.content}`)
