@@ -13,7 +13,7 @@ export function generate(ast) {
     const args = ["_ctx", "_cache"];
     const signature = args.join(", ")
 
-    push(`functionNmae ${functionName}(${signature}){`);
+    push(`function ${functionName}(${signature}){`);
     push(`return `);
     console.log("genNode", ast)
     genNode(ast.codegenNode, context);
@@ -109,7 +109,7 @@ function genExpression(node, context) {
 
 function genText(node, context) {
     const { push } = context;
-    push(`'${node.content}`);
+    push(`'${node.content}'`);
 }
 
 function geninterpolation(node: any, context: any) {
